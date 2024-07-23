@@ -3,9 +3,10 @@ import { useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { PDFDocument, degrees } from 'pdf-lib';
 import microtip from 'microtip/microtip.css';
+import Loading from './loading';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
+  'pdfjs-dist/build/pdf.worker.min.js',
   import.meta.url
 ).toString();
 
@@ -206,6 +207,7 @@ function RotatePdf() {
 
         <Document
           file={file}
+          loading={<Loading />}
           onLoadSuccess={onDocumentLoadSuccess}
           className='flex flex-wrap justify-center'>
           {Array.from(new Array(numPages), (el, index) => (
