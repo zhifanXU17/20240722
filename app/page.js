@@ -1,11 +1,8 @@
-import Header from './components/Header';
-import Footer from './components/Footer';
 import RotatePdf from './components/RotatePdf';
 
 export default function Home() {
   return (
     <main>
-      <Header />
       <div className='bg-[#f7f5ee] text-black'>
         <div className='container mx-auto py-20 space-y-5'>
           <div className='flex flex-col text-center mb-10 space-y-5'>
@@ -16,13 +13,11 @@ export default function Home() {
               Simply click on a page to rotate it. You can
               then download your modified PDF.
             </p>
-            <RotatePdf />
-            <div className='flex flex-wrap justify-center'></div>
           </div>
+          <RotatePdf />
+          <div className='flex flex-wrap justify-center'></div>
         </div>
       </div>
-
-      <Footer />
     </main>
   );
 }

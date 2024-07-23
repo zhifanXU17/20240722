@@ -124,6 +124,12 @@ a {
   text-decoration: none;
 }
 
+canvas {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: contain;
+}
+
 @media (min-width: 769px) {
   .hide-desktop {
     display: none !important;

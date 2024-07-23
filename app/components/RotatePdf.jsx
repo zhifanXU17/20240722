@@ -1,9 +1,10 @@
 'use client';
-import { useRef, useState } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
+import { useRef, useState, useCallback, memo } from 'react';
+import { Document, pdfjs } from 'react-pdf';
 import { PDFDocument, degrees } from 'pdf-lib';
 import microtip from 'microtip/microtip.css';
 import Loading from './Loading';
+import PdfPage from './PdfPage';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.js',
@@ -12,83 +13,66 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 function RotatePdf() {
   const [file, setFile] = useState(null);
-  const [numPages, setNumPages] = useState(0);
-  const fileName = useRef('');
-  const editFile = useRef(null);
   const [pageRotations, setPageRotations] = useState([]);
   const [pageWidth, setPageWidth] = useState(200);
+  const fileName = useRef('');
 
   const handleUpload = (e) => {
     if (e.target.files) {
       setFile(e.target.files[0]);
-
-      let reader = new FileReader();
-      reader.onload = function () {
-        generatePdf(reader);
-      };
-      reader.readAsArrayBuffer(e.target.files[0]);
-
       fileName.current = e.target.files[0].name;
     }
   };
 
-  const generatePdf = async (reader) => {
-    const pdfDoc = await PDFDocument.load(reader.result);
-    const pdfBytes = await pdfDoc.save();
-    editFile.current = pdfBytes;
-  };
-
   const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
     setPageRotations([...Array(numPages).fill(0)]);
   };
 
-  const handleRotatePage = (page) => {
-    const result = [...pageRotations];
-    if (result[page] === 360) {
-      result[page] = 90;
-    } else {
-      result[page] += 90;
-    }
-    setPageRotations([...result]);
-  };
+  const changeRotation = useCallback(
+    (page, rotation) => {
+      const result = [...pageRotations];
+      result[page] = rotation;
+      setPageRotations([...result]);
+    },
+    [pageRotations, setPageRotations]
+  );
 
   const handleRotateAllPages = () => {
     const result = [];
-
-    for (const pageRotation of pageRotations) {
-      let rotation = pageRotation;
-      if (rotation === 360) {
-        rotation = 90;
+    for (
+      let index = 0;
+      index < pageRotations.length;
+      index++
+    ) {
+      let item = pageRotations[index];
+      if (item + 90 > 360) {
+        item = 90;
       } else {
-        rotation += 90;
+        item += 90;
       }
-      result.push(rotation);
+      result.push(item);
     }
-
     setPageRotations([...result]);
   };
 
   const handleRemoveFile = () => {
     setFile(null);
-    setNumPages(0);
     setPageRotations([]);
     fileName.current = null;
-    editFile.current = null;
   };
 
   const handleZoomIn = () => {
-    setPageWidth((prev) => prev + 50);
+    setPageWidth((prev) => (prev += 50));
   };
 
   const handleZoomOut = () => {
-    setPageWidth((prev) => prev - 50);
+    setPageWidth((prev) => (prev -= 50));
   };
 
   const downloadFile = async () => {
-    const downloadedPdf = await PDFDocument.load(
-      editFile.current
-    );
+    const buff = await file.arrayBuffer();
+    const x = new Uint8Array(buff);
+    const downloadedPdf = await PDFDocument.load(x);
     const pages = downloadedPdf.getPages();
     for (let index = 0; index < pages.length; index++) {
       const page = pages[index];
@@ -210,44 +194,14 @@ function RotatePdf() {
           loading={<Loading />}
           onLoadSuccess={onDocumentLoadSuccess}
           className='flex flex-wrap justify-center'>
-          {Array.from(new Array(numPages), (el, index) => (
-            <div
+          {pageRotations.map((rotation, index) => (
+            <PdfPage
+              pageWidth={pageWidth}
+              index={index}
+              rotation={rotation}
+              changeRotation={changeRotation}
               key={`page_${index + 1}`}
-              style={{
-                maxWidth: `${pageWidth}px`,
-                flexBasis: `${pageWidth}px`,
-              }}
-              className={`m-3 grow-0 shrink-0`}>
-              <div className='relative cursor-pointer'>
-                <div
-                  onClick={() => handleRotatePage(index)}
-                  className='absolute z-10 top-1 right-1 rounded-full p-1 hover:scale-105 hover:fill-white bg-[#ff612f] fill-white'>
-                  <svg
-                    className='w-3'
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 512 512'>
-                    <path d='M142.9 142.9c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8H463.5c0 0 0 0 0 0H472c13.3 0 24-10.7 24-24V72c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5c7.7-21.8 20.2-42.3 37.8-59.8zM16 312v7.6 .7V440c0 9.7 5.8 18.5 14.8 22.2s19.3 1.7 26.2-5.2l41.6-41.6c87.6 86.5 228.7 86.2 315.8-1c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.2 62.2-162.7 62.5-225.3 1L185 329c6.9-6.9 8.9-17.2 5.2-26.2s-12.5-14.8-22.2-14.8H48.4h-.7H40c-13.3 0-24 10.7-24 24z'></path>
-                  </svg>
-                </div>
-
-                <div className='overflow-hidden transition-transform'>
-                  <div className='relative h-full w-full flex flex-col justify-between items-center shadow-md p-3 bg-white hover:bg-gray-50'>
-                    <Page
-                      rotate={pageRotations[index]}
-                      pageNumber={index + 1}
-                      renderAnnotationLayer={false}
-                      renderTextLayer={false}
-                      width={pageWidth}
-                      className='pointer-events-none w-full shrink'
-                    />
-
-                    <div className='w-[90%] text-center shrink-0 text-xs italic overflow-hidden text-ellipsis whitespace-nowrap'>
-                      {index + 1}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            />
           ))}
         </Document>
 
@@ -266,4 +220,4 @@ function RotatePdf() {
   }
 }
 
-export default RotatePdf;
+export default memo(RotatePdf);
