@@ -1,6 +1,6 @@
-import Header from './header';
-import Footer from './footer';
-import RotatePdf from './rotatePdf';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import RotatePdf from './components/RotatePdf';
 
 export default function Home() {
   return (

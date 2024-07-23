@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { PDFDocument, degrees } from 'pdf-lib';
 import microtip from 'microtip/microtip.css';
-import Loading from './loading';
+import Loading from './Loading';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.js',
